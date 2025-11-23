@@ -5,10 +5,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- leaflet css link  -->
-    <link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 
     <title>Web-GIS with Geoserver and Leaflet</title>
 
@@ -23,19 +22,9 @@
       }
       .button-container {
         position: absolute;
-        top: 170px; /* Positioned below the default Leaflet controls */
+        top: 170px;
         left: 10px;
-        z-index: 400; /* z-index below the geoportal overlay */
-      }
-      .custom-button {
-        padding: 5px 10px;
-        background-color: white;
-        border: 2px solid #ccc;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      .custom-button:hover {
-        background-color: #f4f4f4;
+        z-index: 400;
       }
       #geoportal-container {
         display: none;
@@ -53,6 +42,39 @@
         left: 10px;
         z-index: 1001;
       }
+
+      /* --- TAMBAHAN CSS UNTUK LEGENDA --- */
+      .legend {
+        padding: 10px;
+        background: white;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        line-height: 24px;
+        color: #555;
+        max-height: 400px; /* Batasi tinggi jika layer banyak */
+        overflow-y: auto;  /* Scroll jika terlalu panjang */
+        min-width: 150px;
+      }
+      .legend h5 {
+        margin: 0 0 5px;
+        color: #777;
+        font-size: 16px;
+        font-weight: bold;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 5px;
+      }
+      .legend-item {
+        margin-bottom: 10px;
+      }
+      .legend-item img {
+        display: block;
+        margin-top: 5px;
+      }
+      .legend-label {
+        font-size: 12px;
+        font-weight: bold;
+      }
     </style>
   </head>
 
@@ -60,21 +82,18 @@
     <div id="map"></div>
 
     <div id="geoportal-container">
-        <button id="backBtn" class="custom-button">Back</button>
-        <iframe src="https://geoportal.slemankab.go.id/datasets/geonode:kasus_dbd_2025_semester1/embed" style="width: 100%; height: 100%; border: none;"></iframe>
+      <button id="backBtn" class="btn btn-secondary">Back</button>
+      <iframe src="https://geoportal.slemankab.go.id/datasets/geonode:kasus_dbd_2025_semester1/embed" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
 
     <div class="button-container">
-        <button id="geoportalBtn" class="custom-button">Go to Geoportal</button>
+      <button id="geoportalBtn" class="btn btn-primary">Go to Geoportal</button>
     </div>
 
-    <!-- leaflet js link  -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      // ===============================
-      // MAP DASAR
-      // ===============================
       var map = L.map("map").setView([-7.732521, 110.402376], 11);
 
       var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -82,73 +101,100 @@
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
 
-      // ===============================
-      // LAYER WMS DARI GEOSERVER
-      // ===============================
+      // --- DEFINISI LAYER WMS ---
+      var desa = L.tileLayer.wms("http://localhost:8080/geoserver/pgweb/wms", {
+        layers: "pgweb:ADMINISTRASIDESA_AR_25K",
+        format: "image/png",
+        transparent: true,
+      }).addTo(map);
 
-      // 1. ADMINISTRASIDESA_AR_25K
-      var desa = L.tileLayer.wms(
-        "http://localhost:8080/geoserver/pgweb/wms",
-        {
-          layers: "pgweb:ADMINISTRASIDESA_AR_25K",
-          format: "image/png",
-          transparent: true
-        }
-      ).addTo(map);
+      var jalan = L.tileLayer.wms("http://localhost:8080/geoserver/pgweb/wms", {
+        layers: "pgweb:JALAN_LN_25K",
+        format: "image/png",
+        transparent: true,
+      }).addTo(map);
 
-      // 2. JALAN_LN_25K
-      var jalan = L.tileLayer.wms(
-        "http://localhost:8080/geoserver/pgweb/wms",
-        {
-          layers: "pgweb:JALAN_LN_25K",
-          format: "image/png",
-          transparent: true
-        }
-      ).addTo(map);
+      var kecamatan = L.tileLayer.wms("http://localhost:8080/geoserver/pgweb/wms", {
+        layers: "pgweb:data_kecamatan",
+        format: "image/png",
+        transparent: true,
+      }).addTo(map);
 
-      // 3. data_kecamatan
-      var kecamatan = L.tileLayer.wms(
-        "http://localhost:8080/geoserver/pgweb/wms",
-        {
-          layers: "pgweb:data_kecamatan",
-          format: "image/png",
-          transparent: true
-        }
-      ).addTo(map);
+      var toponimi = L.tileLayer.wms("http://localhost:8080/geoserver/pgweb/wms", {
+        layers: "pgweb:TOPONIMI_PT_25K",
+        format: "image/png",
+        transparent: true,
+      }).addTo(map);
 
-      // 4. data toponimi
-      var toponimi = L.tileLayer.wms(
-        "http://localhost:8080/geoserver/pgweb/wms",
-        {
-          layers: "pgweb:TOPONIMI_PT_25K",
-          format: "image/png",
-          transparent: true
-        }
-      ).addTo(map);
-
-
-      // ===============================
-      // LAYER CONTROL
-      // ===============================
+      // Control Layer (Checkbox)
       var overlayLayers = {
         "Administrasi Desa (AR_25K)": desa,
         "Jalan 25K": jalan,
-        "Data Toponimi": toponimi
+        "Data Toponimi": toponimi,
       };
 
-      L.control.layers(null, overlayLayers, {position: 'topleft'}).addTo(map);
+      L.control.layers(null, overlayLayers, { position: "topleft" }).addTo(map);
+
+      // --- SCRIPT UNTUK MENAMBAHKAN LEGENDA ---
+      
+      // Membuat kontrol custom Leaflet
+      var legendControl = L.control({ position: "bottomright" });
+
+      legendControl.onAdd = function (map) {
+        var div = L.DomUtil.create("div", "legend");
+        
+        // Judul Legenda
+        div.innerHTML = "<h5>Legenda Peta</h5>";
+
+        // Fungsi helper untuk membuat URL GetLegendGraphic
+        function getLegendUrl(layerName) {
+            return "http://localhost:8080/geoserver/pgweb/wms?" + 
+                   "REQUEST=GetLegendGraphic&" + 
+                   "VERSION=1.0.0&" + 
+                   "FORMAT=image/png&" + 
+                   "LAYER=" + layerName + "&" + 
+                   "LEGEND_OPTIONS=forceLabels:on"; // Opsi tambahan agar label terlihat rapi
+        }
+
+        // 1. Legenda Admin Desa
+        div.innerHTML += 
+            '<div class="legend-item">' +
+            '<span class="legend-label">Administrasi Desa</span>' +
+            '<img src="' + getLegendUrl("pgweb:ADMINISTRASIDESA_AR_25K") + '">' +
+            '</div>';
+
+        // 2. Legenda Jalan
+        div.innerHTML += 
+            '<div class="legend-item">' +
+            '<span class="legend-label">Jaringan Jalan</span>' +
+            '<img src="' + getLegendUrl("pgweb:JALAN_LN_25K") + '">' +
+            '</div>';
+            
+        // 3. Legenda Toponimi
+        div.innerHTML += 
+            '<div class="legend-item">' +
+            '<span class="legend-label">Toponimi</span>' +
+            '<img src="' + getLegendUrl("pgweb:TOPONIMI_PT_25K") + '">' +
+            '</div>';
+
+        return div;
+      };
+
+      legendControl.addTo(map);
 
     </script>
+
     <script>
-      document.getElementById('geoportalBtn').addEventListener('click', function() {
-        document.getElementById('map').style.display = 'none';
-        document.querySelector('.leaflet-control-container').style.display = 'none';
-        document.getElementById('geoportal-container').style.display = 'block';
+      document.getElementById("geoportalBtn").addEventListener("click", function () {
+        document.getElementById("map").style.display = "none";
+        document.querySelector(".leaflet-control-container").style.display = "none";
+        document.getElementById("geoportal-container").style.display = "block";
       });
-      document.getElementById('backBtn').addEventListener('click', function() {
-        document.getElementById('map').style.display = 'block';
-        document.querySelector('.leaflet-control-container').style.display = 'block';
-        document.getElementById('geoportal-container').style.display = 'none';
+
+      document.getElementById("backBtn").addEventListener("click", function () {
+        document.getElementById("map").style.display = "block";
+        document.querySelector(".leaflet-control-container").style.display = "block";
+        document.getElementById("geoportal-container").style.display = "none";
         map.invalidateSize();
       });
     </script>
